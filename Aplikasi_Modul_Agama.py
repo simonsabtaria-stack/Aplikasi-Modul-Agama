@@ -28,7 +28,7 @@ st.markdown("""
 if 'data_isian' not in st.session_state: st.session_state.data_isian = {}
 if 'teks_buku' not in st.session_state: st.session_state.teks_buku = ""
 
-
+# Memori tambahan untuk fitur otomatis Tab 1 & 2
 if 'draft_cp' not in st.session_state: st.session_state.draft_cp = ""
 if 'draft_komp_awal' not in st.session_state: st.session_state.draft_komp_awal = ""
 if 'draft_tp' not in st.session_state: st.session_state.draft_tp = ""
@@ -77,10 +77,24 @@ with tab1:
         simpan_teks('Nama_Penyusun', st.text_input("Nama Penyusun:"))
         simpan_teks('Satuan_Pendidikan', st.text_input("Satuan Pendidikan (Nama Sekolah):"))
     with c2:
-        pilihan_fase = ["Fase A (Kelas I - II)", "Fase B (Kelas III - IV)", "Fase C (Kelas V - VI)", "Fase D (Kelas VII - IX)", "Fase E (Kelas X)", "Fase F (Kelas XI - XII)"]
-        fase_kelas = st.selectbox("Fase / Kelas:", pilihan_fase)
-        simpan_teks('Fase_Kelas', fase_kelas)
         
+        peta_fase_kelas = {
+            "Fase A": ["Kelas I", "Kelas II"],
+            "Fase B": ["Kelas III", "Kelas IV"],
+            "Fase C": ["Kelas V", "Kelas VI"],
+            "Fase D": ["Kelas VII", "Kelas VIII", "Kelas IX"],
+            "Fase E": ["Kelas X"],
+            "Fase F": ["Kelas XI", "Kelas XII"]
+        }
+        
+        kol_fase, kol_kelas = st.columns(2)
+        with kol_fase:
+            fase_terpilih = st.selectbox("Fase:", list(peta_fase_kelas.keys()))
+        with kol_kelas:
+            kelas_terpilih = st.selectbox("Kelas:", peta_fase_kelas[fase_terpilih])
+            
+        # Menggabungkan hasil untuk Word Template
+        simpan_teks('Fase_Kelas', f"{fase_terpilih} / {kelas_terpilih}")
         
         pilihan_elemen = ["Pribadi Peserta Didik", "Yesus Kristus", "Gereja", "Masyarakat"]
         elemen = st.selectbox("Elemen:", pilihan_elemen)
