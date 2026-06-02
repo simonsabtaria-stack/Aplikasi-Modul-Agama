@@ -8,7 +8,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="Modul AI Agama Katolik", page_icon="🕊️", layout="wide")
 
 st.title("🕊️ Penyusun Modul Ajar Agama Katolik")
-st.write("Sistem perancang modul otomatis berbasis dokumen Buku Ajar.")
+st.write("Sistem perancang modul otomatis berbasis dokumen Buku Ajar dengan Memori Rantai Terpusat.")
 
 st.sidebar.subheader("🤖 Pengaturan Asisten AI")
 api_key_guru = st.sidebar.text_input("🔑 Kunci API Gemini:", type="password")
@@ -46,7 +46,6 @@ def simpan_teks(kunci, nilai):
 def panggil_ai(prompt):
     genai.configure(api_key=api_key_guru)
     
-    # Deteksi Model Cerdas dan Tangguh
     mesin_tersedia = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
     mesin_flash = [m for m in mesin_tersedia if 'flash' in m.lower() and 'interactions' not in m.lower()]
     
@@ -124,7 +123,7 @@ with tab1:
         if st.button("✨ Rumuskan CP, Kompetensi Awal & TP Otomatis (AI)", key="btn_cptp"):
             if not api_key_guru: st.warning("Pastikan Kunci API terisi di Sidebar!")
             else:
-                with st.spinner("AI sedang menganalisis materi untuk merumuskan CP dan TP..."):
+                with st.spinner("AI menganalisis materi untuk merumuskan CP dan TP..."):
                     try:
                         prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
                         Rumuskan:\n[CP]\n(1 paragraf Capaian Pembelajaran)\n[KOMP_AWAL]\n(Kompetensi Awal)\n[TP]\n(1-3 poin Tujuan Pembelajaran)
@@ -150,9 +149,10 @@ with tab2:
     if st.button("✨ Rumuskan Pemahaman & Pemantik (AI)", key="btn_pemantik"):
         if not api_key_guru or not st.session_state.teks_buku or not tp: st.warning("Pastikan Kunci API, PDF, dan TP terisi!")
         else:
-            with st.spinner("AI merumuskan komponen inti..."):
+            with st.spinner("AI merumuskan komponen inti berdasarkan Tujuan Pembelajaran..."):
                 try:
-                    prompt = f"Berdasarkan buku ini:\n{st.session_state.teks_buku[:15000]}\nBuatkan untuk TP: {tp}.\n[PEMAHAMAN]\n(1 paragraf pemahaman bermakna)\n[PEMANTIK]\n(3 pertanyaan pemantik)"
+                    # MEMORI: Membawa TP dari Tab 1
+                    prompt = f"Berdasarkan buku ini:\n{st.session_state.teks_buku[:15000]}\n\nFOKUS TUJUAN PEMBELAJARAN: {tp}\n\nBuatkan:\n[PEMAHAMAN]\n(1 paragraf pemahaman bermakna yang selaras dengan TP di atas)\n[PEMANTIK]\n(3 pertanyaan pemantik yang memancing nalar kritis terkait TP tersebut)"
                     respons_ai = panggil_ai(prompt)
                     if "[PEMAHAMAN]" in respons_ai and "[PEMANTIK]" in respons_ai:
                         st.session_state.draft_pemahaman = respons_ai.split("[PEMAHAMAN]")[1].split("[PEMANTIK]")[0].strip()
@@ -176,9 +176,24 @@ with tab3:
     if st.button("✨ Rancang Kegiatan Pembelajaran (AI)", key="btn_kegiatan"):
         if not api_key_guru or not st.session_state.teks_buku or not tp: st.warning("Pastikan Kunci API, PDF, dan TP terisi!")
         else:
-            with st.spinner(f"AI menyusun sintaks {model_belajar} untuk {jml_pertemuan} pertemuan..."):
+            with st.spinner(f"AI menyusun sintaks {model_belajar} dengan membaca data Tab 1 & 2..."):
                 try:
-                    prompt = f"Dari buku ini:\n{st.session_state.teks_buku[:15000]}\nRancang kegiatan {jml_pertemuan} pertemuan. Model: {model_belajar}. TP: {tp}.\n[AWAL]\n(Pendahuluan)\n[INTI]\n(Sintaks inti rinci)\n[PENUTUP]\n(Penutup)"
+                    # MEMORI: Membawa TP, Pemahaman, dan Pemantik dari Tab 1 & 2
+                    konteks_modul = f"""
+                    - Tujuan Pembelajaran: {tp}
+                    - Pemahaman Bermakna: {st.session_state.draft_pemahaman}
+                    - Pertanyaan Pemantik: {st.session_state.draft_pemantik}
+                    """
+                    
+                    prompt = f"""Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
+                    INFORMASI MODUL SEJAUH INI (Jadikan acuan utama agar kegiatan nyambung):
+                    {konteks_modul}
+                    
+                    Rancang kegiatan {jml_pertemuan} pertemuan menggunakan sintaks model: {model_belajar}. 
+                    Pastikan kegiatan yang dirancang benar-benar menjawab Pertanyaan Pemantik dan mencapai Tujuan Pembelajaran di atas.
+                    
+                    [AWAL]\n(Pendahuluan)\n[INTI]\n(Sintaks inti rinci)\n[PENUTUP]\n(Penutup)
+                    """
                     respons_ai = panggil_ai(prompt)
                     if "[AWAL]" in respons_ai and "[INTI]" in respons_ai and "[PENUTUP]" in respons_ai:
                         st.session_state.draft_awal = respons_ai.split("[AWAL]")[1].split("[INTI]")[0].strip()
@@ -191,11 +206,10 @@ with tab3:
     simpan_teks('Kegiatan_Penutup', st.text_area("C. Kegiatan Penutup:", value=st.session_state.draft_penutup, height=150))
     gbr_kegiatan = st.file_uploader("Gambar Kegiatan (Opsional)", type=['png', 'jpg', 'jpeg'], key="g2")
 
-# ================= TAB 4 (DIPERBARUI) =================
+# ================= TAB 4 =================
 with tab4:
     st.subheader("Asesmen Pembelajaran & Penugasan")
     
-    # FITUR BARU: INSTRUKSI KUSTOM UNTUK GURU
     st.info("💡 Ketik instruksi di bawah ini agar asesmen yang dibuat AI sesuai dengan gaya mengajar Anda.")
     instruksi_asesmen = st.text_area("Instruksi Khusus Asesmen (Opsional):", 
                                      placeholder="Contoh: Fokuskan penilaian formatif pada rubrik presentasi kelompok, dan soal sumatif berjenis studi kasus hots.")
@@ -204,27 +218,27 @@ with tab4:
         if not api_key_guru or not st.session_state.teks_buku:
             st.warning("Pastikan Kunci API dan PDF terisi!")
         else:
-            with st.spinner("AI menyusun instrumen penilaian agar relevan dengan kegiatan..."):
+            with st.spinner("AI menyusun asesmen dengan membaca seluruh aktivitas dari Tab 1, 2, dan 3..."):
                 try:
-                    # FITUR BARU: Mengirimkan konteks 'Kegiatan Inti' dari Tab 3 ke Tab 4
-                    konteks_kegiatan = f"Kegiatan belajar yang telah disepakati: {st.session_state.draft_inti}\n\n" if st.session_state.draft_inti else ""
+                    # MEMORI: Membawa semua data dari Tab 1, 2, dan 3
+                    konteks_modul_lengkap = f"""
+                    - Tujuan Pembelajaran: {tp}
+                    - Pemahaman Bermakna: {st.session_state.draft_pemahaman}
+                    - Skenario Kegiatan Inti: {st.session_state.draft_inti}
+                    """
                     
                     prompt = f"""Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    {konteks_kegiatan}
-                    Buatkan 3 ragam instrumen penilaian terpisah.
+                    KONTEKS MODUL YANG SUDAH DIBUAT (Sangat Penting):
+                    {konteks_modul_lengkap}
                     
-                    INSTRUKSI KHUSUS DARI GURU (WAJIB DIIKUTI JIKA ADA): 
-                    {instruksi_asesmen if instruksi_asesmen else 'Buatkan formatif berupa rubrik observasi dan sumatif berupa 5 soal pilihan ganda standar.'}
+                    Buatkan 3 ragam instrumen penilaian terpisah. 
+                    Evaluasi WAJIB mengukur pencapaian 'Tujuan Pembelajaran' di atas dan harus relevan dengan 'Skenario Kegiatan Inti' yang sudah dilakukan siswa.
+                    
+                    INSTRUKSI KHUSUS DARI GURU: 
+                    {instruksi_asesmen if instruksi_asesmen else 'Buatkan formatif berupa rubrik observasi dan sumatif berupa 5 soal pilihan ganda.'}
                     
                     Wajib gunakan tag ini:
-                    [DIAGNOSTIK]
-                    (3 pertanyaan dasar prasyarat/awal)
-                    [FORMATIF]
-                    (Penilaian proses, rubrik sikap, atau sesuai instruksi guru)
-                    [SUMATIF]
-                    (Soal evaluasi akhir + kunci jawaban, atau sesuai instruksi guru)
-                    
-                    ATURAN KETAT: Jawab LANGSUNG ke isi penilaian. Pastikan asesmen relevan dengan kegiatan belajar di atas.
+                    [DIAGNOSTIK]\n(3 pertanyaan prasyarat)\n[FORMATIF]\n(Penilaian proses sesuai kegiatan inti)\n[SUMATIF]\n(Soal evaluasi akhir + kunci jawaban)
                     """
                     respons_ai = panggil_ai(prompt)
                     if "[DIAGNOSTIK]" in respons_ai and "[FORMATIF]" in respons_ai and "[SUMATIF]" in respons_ai:
@@ -256,7 +270,7 @@ with tab5:
         simpan_teks('Nama_Kepala_Sekolah', st.text_input("Nama Kepala Sekolah:"))
     
     st.divider()
-    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan.")
+    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan (termasuk {{Elemen}}).")
     if st.button("🖨️ Rakit & Unduh Modul", type="primary", use_container_width=True):
         with st.spinner('Merakit dokumen...'):
             try:
