@@ -51,7 +51,10 @@ def panggil_ai(prompt):
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
             nama_mesin = m.name
-            if 'flash' in m.name.lower(): break
+            # KUNCI PERUBAHAN: Memaksa sistem mencari versi 1.5 yang kuotanya melimpah
+            if '1.5' in m.name.lower() and 'flash' in m.name.lower(): 
+                break
+                
     if not nama_mesin: raise Exception("Tidak ada model AI yang tersedia.")
     
     aturan_global = """
