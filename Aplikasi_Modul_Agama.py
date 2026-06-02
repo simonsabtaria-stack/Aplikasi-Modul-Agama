@@ -48,23 +48,26 @@ def simpan_teks(kunci, nilai):
 def panggil_ai(prompt):
     genai.configure(api_key=api_key_guru)
     
-    # Daftar prioritas model stabil dengan kuota gratis melimpah
-    prioritas_model = [
-        'models/gemini-1.5-flash-002', 
-        'models/gemini-1.5-flash-001', 
-        'models/gemini-1.5-flash-latest'
-    ]
+    # 1. Ambil SEMUA daftar mesin yang diizinkan untuk Kunci API ini
+    mesin_tersedia = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
     
-    # Ambil semua nama model yang valid dan diizinkan di akun Anda
-    model_valid = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    # 2. Saring hanya yang bertipe "flash" (cepat) dan BUKAN "interactions" (karena itu penyebab error 400 sebelumnya)
+    mesin_flash = [m for m in mesin_tersedia if 'flash' in m.lower() and 'interactions' not in m.lower()]
     
-    # Cari model terbaik dari daftar prioritas
-    nama_mesin = 'gemini-1.5-flash' # Fallback dasar jika terjadi sesuatu
-    for pilihan in prioritas_model:
-        if pilihan in model_valid:
-            nama_mesin = pilihan
-            break # Jika sudah menemukan yang stabil, langsung pilih dan berhenti mencari
+    if not mesin_flash:
+        raise Exception("Kunci API ini tidak memiliki akses ke mesin Gemini Flash.")
+        
+    # 3. Prioritaskan mencari versi 1.5 (karena kuota gratisnya sangat melimpah)
+    nama_mesin = None
+    for m in mesin_flash:
+        if '1.5' in m:
+            nama_mesin = m
+            break
             
+    # 4. Jika versi 1.5 tidak ditemukan, gunakan versi flash apa pun yang tersedia di akun tersebut
+    if not nama_mesin:
+        nama_mesin = mesin_flash[0]
+        
     aturan_global = """
     \n\nATURAN FORMATTING WAJIB (PENTING):
     1. WAJIB menggunakan huruf kecil normal dengan kapital di awal kalimat (Sentence Case). DILARANG KERAS teks berhuruf besar semua (UPPERCASE).
