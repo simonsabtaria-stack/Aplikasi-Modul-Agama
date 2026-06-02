@@ -27,6 +27,12 @@ st.markdown("""
 
 if 'data_isian' not in st.session_state: st.session_state.data_isian = {}
 if 'teks_buku' not in st.session_state: st.session_state.teks_buku = ""
+
+
+if 'draft_cp' not in st.session_state: st.session_state.draft_cp = ""
+if 'draft_komp_awal' not in st.session_state: st.session_state.draft_komp_awal = ""
+if 'draft_tp' not in st.session_state: st.session_state.draft_tp = ""
+
 if 'draft_pemahaman' not in st.session_state: st.session_state.draft_pemahaman = ""
 if 'draft_pemantik' not in st.session_state: st.session_state.draft_pemantik = ""
 if 'draft_awal' not in st.session_state: st.session_state.draft_awal = ""
@@ -62,6 +68,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 1. Info Umum", "🎯 2. Pemantik", "🏃 3. Kegiatan", "📝 4. Asesmen", "🖨️ 5. Cetak"
 ])
 
+
 with tab1:
     st.subheader("Informasi Umum Modul")
     c1, c2 = st.columns(2)
@@ -73,18 +80,22 @@ with tab1:
         pilihan_fase = ["Fase A (Kelas I - II)", "Fase B (Kelas III - IV)", "Fase C (Kelas V - VI)", "Fase D (Kelas VII - IX)", "Fase E (Kelas X)", "Fase F (Kelas XI - XII)"]
         fase_kelas = st.selectbox("Fase / Kelas:", pilihan_fase)
         simpan_teks('Fase_Kelas', fase_kelas)
+        
+        
+        pilihan_elemen = ["Pribadi Peserta Didik", "Yesus Kristus", "Gereja", "Masyarakat"]
+        elemen = st.selectbox("Elemen:", pilihan_elemen)
+        simpan_teks('Elemen', elemen)
+        
         simpan_teks('Alokasi_Waktu', st.text_input("Alokasi Waktu (Contoh: 2 x 35 Menit):"))
-        simpan_teks('Kompetensi_Awal', st.text_area("Kompetensi Awal:"))
     
-    simpan_teks('Capaian_Pembelajaran', st.text_area("Capaian Pembelajaran (CP):"))
-
     opsi_ppp = ["Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia", "Berkebinekaan Global", "Bergotong Royong", "Mandiri", "Bernalar Kritis", "Kreatif"]
     pilihan_ppp = st.multiselect("Profil Pelajar Pancasila:", opsi_ppp)
     simpan_teks('Profil_Pelajar_Pancasila', ", ".join(pilihan_ppp))
     
     st.divider()
-    st.subheader("📚 Sumber Materi (Wajib untuk AI)")
+    st.subheader("📚 Sumber Materi & Ekstraksi AI")
     file_buku = st.file_uploader("Unggah PDF Buku Ajar / Bab Materi", type=['pdf'])
+    
     if file_buku:
         with st.spinner("Mengekstrak teks dari PDF..."):
             pembaca = PyPDF2.PdfReader(file_buku)
@@ -94,10 +105,47 @@ with tab1:
                 if t: teks_sementara += t + "\n"
             st.session_state.teks_buku = teks_sementara
             st.success(f"Teks buku berhasil diserap! ({len(pembaca.pages)} halaman).")
+            
+        if st.button("✨ Rumuskan CP, Kompetensi Awal & TP Otomatis (AI)", key="btn_cptp"):
+            if not api_key_guru:
+                st.warning("Pastikan Kunci API terisi di Sidebar!")
+            else:
+                with st.spinner("AI sedang menganalisis materi untuk merumuskan CP dan TP..."):
+                    try:
+                        prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
+                        Rumuskan 3 hal berikut:
+                        1. Capaian Pembelajaran (CP) yang sesuai dengan cakupan materi (1 paragraf ringkas).
+                        2. Kompetensi Awal (kemampuan dasar prasyarat) yang harus dimiliki peserta didik sebelum mempelajari materi ini.
+                        3. Tujuan Pembelajaran (TP) yang ingin dicapai (1-3 poin singkat).
+                        
+                        Wajib gunakan tag ini agar sistem dapat memisahkan teksnya:
+                        [CP]
+                        (Isi teks Capaian Pembelajaran di sini)
+                        [KOMP_AWAL]
+                        (Isi teks Kompetensi Awal di sini)
+                        [TP]
+                        (Isi teks Tujuan Pembelajaran di sini)
+                        
+                        ATURAN KETAT: Jawab LANGSUNG pada intinya tanpa salam atau pengantar.
+                        """
+                        respons_ai = panggil_ai(prompt)
+                        if "[CP]" in respons_ai and "[KOMP_AWAL]" in respons_ai and "[TP]" in respons_ai:
+                            st.session_state.draft_cp = respons_ai.split("[CP]")[1].split("[KOMP_AWAL]")[0].strip()
+                            st.session_state.draft_komp_awal = respons_ai.split("[KOMP_AWAL]")[1].split("[TP]")[0].strip()
+                            st.session_state.draft_tp = respons_ai.split("[TP]")[1].strip()
+                    except Exception as e: st.error(e)
+
+    cp_input = st.text_area("Capaian Pembelajaran (CP):", value=st.session_state.draft_cp, height=100)
+    simpan_teks('Capaian_Pembelajaran', cp_input)
+    
+    komp_awal_input = st.text_area("Kompetensi Awal:", value=st.session_state.draft_komp_awal, height=100)
+    simpan_teks('Kompetensi_Awal', komp_awal_input)
+
 
 with tab2:
     st.subheader("Tujuan & Pemantik")
-    tp = st.text_area("Tujuan Pembelajaran (TP):")
+    
+    tp = st.text_area("Tujuan Pembelajaran (TP):", value=st.session_state.draft_tp, height=100)
     simpan_teks('Tujuan_Pembelajaran', tp)
     
     if st.button("✨ Rumuskan Pemahaman & Pemantik (AI)", key="btn_pemantik"):
@@ -125,17 +173,13 @@ with tab2:
     simpan_teks('Pertanyaan_Pemantik', st.text_area("Pertanyaan Pemantik:", value=st.session_state.draft_pemantik, height=100))
     gbr_pemantik = st.file_uploader("Gambar Pemantik (Opsional)", type=['png', 'jpg', 'jpeg'], key="g1")
 
+
 with tab3:
     st.subheader("Kegiatan Pembelajaran")
     
-    
     opsi_model = [
-        "Discovery Learning",
-        "Problem Based Learning (PBL)",
-        "Project Based Learning (PjBL)",
-        "Inquiry Learning",
-        "Cooperative Learning",
-        "Pendekatan Saintifik (5M)"
+        "Discovery Learning", "Problem Based Learning (PBL)", "Project Based Learning (PjBL)",
+        "Inquiry Learning", "Cooperative Learning", "Pendekatan Saintifik (5M)"
     ]
     model_belajar = st.selectbox("Pilih Pendekatan/Model Pembelajaran:", opsi_model)
     simpan_teks('Model_Pembelajaran', model_belajar)
@@ -163,7 +207,6 @@ with tab3:
                     ATURAN KETAT: Jawab LANGSUNG ke isi kegiatan. Pisahkan per pertemuan dengan rapi.
                     """
                     respons_ai = panggil_ai(prompt)
-                    
                     if "[AWAL]" in respons_ai and "[INTI]" in respons_ai and "[PENUTUP]" in respons_ai:
                         st.session_state.draft_awal = respons_ai.split("[AWAL]")[1].split("[INTI]")[0].strip()
                         st.session_state.draft_inti = respons_ai.split("[INTI]")[1].split("[PENUTUP]")[0].strip()
@@ -174,6 +217,7 @@ with tab3:
     simpan_teks('Kegiatan_Inti', st.text_area("B. Kegiatan Inti:", value=st.session_state.draft_inti, height=250))
     simpan_teks('Kegiatan_Penutup', st.text_area("C. Kegiatan Penutup:", value=st.session_state.draft_penutup, height=150))
     gbr_kegiatan = st.file_uploader("Gambar Kegiatan (Opsional)", type=['png', 'jpg', 'jpeg'], key="g2")
+
 
 with tab4:
     st.subheader("Asesmen Pembelajaran")
@@ -212,6 +256,7 @@ with tab4:
     simpan_teks('Lampiran_Pendukung', st.text_area("Lampiran Pendukung / Lembar Kerja:"))
     gbr_pendukung = st.file_uploader("Gambar Lampiran (Opsional)", type=['png', 'jpg', 'jpeg'], key="g6")
 
+
 with tab5:
     st.subheader("Lembar Pengesahan & Cetak")
     
@@ -224,7 +269,7 @@ with tab5:
         simpan_teks('Nama_Kepala_Sekolah', st.text_input("Nama Kepala Sekolah:"))
     
     st.divider()
-    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan.")
+    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan (termasuk {{Elemen}}).")
     if st.button("🖨️ Rakit & Unduh Modul", type="primary", use_container_width=True):
         with st.spinner('Merakit dokumen...'):
             try:
@@ -232,19 +277,14 @@ with tab5:
                 
                 if gbr_pemantik: st.session_state.data_isian['Gambar_Pemantik'] = InlineImage(doc, gbr_pemantik, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Pemantik'] = ""
-                
                 if gbr_kegiatan: st.session_state.data_isian['Gambar_Kegiatan'] = InlineImage(doc, gbr_kegiatan, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Kegiatan'] = ""
-                
                 if gbr_diagnostik: st.session_state.data_isian['Gambar_Diagnostik'] = InlineImage(doc, gbr_diagnostik, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Diagnostik'] = ""
-                
                 if gbr_formatif: st.session_state.data_isian['Gambar_Formatif'] = InlineImage(doc, gbr_formatif, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Formatif'] = ""
-                
                 if gbr_sumatif: st.session_state.data_isian['Gambar_Sumatif'] = InlineImage(doc, gbr_sumatif, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Sumatif'] = ""
-                
                 if gbr_pendukung: st.session_state.data_isian['Gambar_Pendukung'] = InlineImage(doc, gbr_pendukung, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Pendukung'] = ""
                 
