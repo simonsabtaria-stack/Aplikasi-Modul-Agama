@@ -24,7 +24,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
+# --- INISIALISASI MEMORI STATE ---
 if 'data_isian' not in st.session_state: st.session_state.data_isian = {}
 if 'teks_buku' not in st.session_state: st.session_state.teks_buku = ""
 
@@ -68,7 +68,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 1. Info Umum", "🎯 2. Pemantik", "🏃 3. Kegiatan", "📝 4. Asesmen", "🖨️ 5. Cetak"
 ])
 
-
+# ================= TAB 1 =================
 with tab1:
     st.subheader("Informasi Umum Modul")
     c1, c2 = st.columns(2)
@@ -77,7 +77,7 @@ with tab1:
         simpan_teks('Nama_Penyusun', st.text_input("Nama Penyusun:"))
         simpan_teks('Satuan_Pendidikan', st.text_input("Satuan Pendidikan (Nama Sekolah):"))
     with c2:
-        
+        # FASE DAN KELAS BERTINGKAT
         peta_fase_kelas = {
             "Fase A": ["Kelas I", "Kelas II"],
             "Fase B": ["Kelas III", "Kelas IV"],
@@ -155,7 +155,7 @@ with tab1:
     komp_awal_input = st.text_area("Kompetensi Awal:", value=st.session_state.draft_komp_awal, height=100)
     simpan_teks('Kompetensi_Awal', komp_awal_input)
 
-
+# ================= TAB 2 =================
 with tab2:
     st.subheader("Tujuan & Pemantik")
     
@@ -187,7 +187,7 @@ with tab2:
     simpan_teks('Pertanyaan_Pemantik', st.text_area("Pertanyaan Pemantik:", value=st.session_state.draft_pemantik, height=100))
     gbr_pemantik = st.file_uploader("Gambar Pemantik (Opsional)", type=['png', 'jpg', 'jpeg'], key="g1")
 
-
+# ================= TAB 3 =================
 with tab3:
     st.subheader("Kegiatan Pembelajaran")
     
@@ -232,7 +232,7 @@ with tab3:
     simpan_teks('Kegiatan_Penutup', st.text_area("C. Kegiatan Penutup:", value=st.session_state.draft_penutup, height=150))
     gbr_kegiatan = st.file_uploader("Gambar Kegiatan (Opsional)", type=['png', 'jpg', 'jpeg'], key="g2")
 
-
+# ================= TAB 4 =================
 with tab4:
     st.subheader("Asesmen Pembelajaran")
     
@@ -270,7 +270,7 @@ with tab4:
     simpan_teks('Lampiran_Pendukung', st.text_area("Lampiran Pendukung / Lembar Kerja:"))
     gbr_pendukung = st.file_uploader("Gambar Lampiran (Opsional)", type=['png', 'jpg', 'jpeg'], key="g6")
 
-
+# ================= TAB 5 =================
 with tab5:
     st.subheader("Lembar Pengesahan & Cetak")
     
