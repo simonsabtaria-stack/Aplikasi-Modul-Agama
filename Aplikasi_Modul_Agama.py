@@ -28,11 +28,9 @@ st.markdown("""
 if 'data_isian' not in st.session_state: st.session_state.data_isian = {}
 if 'teks_buku' not in st.session_state: st.session_state.teks_buku = ""
 
-# Memori tambahan untuk fitur otomatis Tab 1 & 2
 if 'draft_cp' not in st.session_state: st.session_state.draft_cp = ""
 if 'draft_komp_awal' not in st.session_state: st.session_state.draft_komp_awal = ""
 if 'draft_tp' not in st.session_state: st.session_state.draft_tp = ""
-
 if 'draft_pemahaman' not in st.session_state: st.session_state.draft_pemahaman = ""
 if 'draft_pemantik' not in st.session_state: st.session_state.draft_pemantik = ""
 if 'draft_awal' not in st.session_state: st.session_state.draft_awal = ""
@@ -48,23 +46,19 @@ def simpan_teks(kunci, nilai):
 def panggil_ai(prompt):
     genai.configure(api_key=api_key_guru)
     
-    # 1. Ambil SEMUA daftar mesin yang diizinkan untuk Kunci API ini
+    # Deteksi Model Cerdas dan Tangguh
     mesin_tersedia = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    
-    # 2. Saring hanya yang bertipe "flash" (cepat) dan BUKAN "interactions" (karena itu penyebab error 400 sebelumnya)
     mesin_flash = [m for m in mesin_tersedia if 'flash' in m.lower() and 'interactions' not in m.lower()]
     
     if not mesin_flash:
         raise Exception("Kunci API ini tidak memiliki akses ke mesin Gemini Flash.")
         
-    # 3. Prioritaskan mencari versi 1.5 (karena kuota gratisnya sangat melimpah)
     nama_mesin = None
     for m in mesin_flash:
         if '1.5' in m:
             nama_mesin = m
             break
             
-    # 4. Jika versi 1.5 tidak ditemukan, gunakan versi flash apa pun yang tersedia di akun tersebut
     if not nama_mesin:
         nama_mesin = mesin_flash[0]
         
@@ -92,23 +86,15 @@ with tab1:
         simpan_teks('Nama_Penyusun', st.text_input("Nama Penyusun:"))
         simpan_teks('Satuan_Pendidikan', st.text_input("Satuan Pendidikan (Nama Sekolah):"))
     with c2:
-        # FASE DAN KELAS BERTINGKAT
         peta_fase_kelas = {
-            "Fase A": ["Kelas I", "Kelas II"],
-            "Fase B": ["Kelas III", "Kelas IV"],
-            "Fase C": ["Kelas V", "Kelas VI"],
-            "Fase D": ["Kelas VII", "Kelas VIII", "Kelas IX"],
-            "Fase E": ["Kelas X"],
-            "Fase F": ["Kelas XI", "Kelas XII"]
+            "Fase A": ["Kelas I", "Kelas II"], "Fase B": ["Kelas III", "Kelas IV"],
+            "Fase C": ["Kelas V", "Kelas VI"], "Fase D": ["Kelas VII", "Kelas VIII", "Kelas IX"],
+            "Fase E": ["Kelas X"], "Fase F": ["Kelas XI", "Kelas XII"]
         }
-        
         kol_fase, kol_kelas = st.columns(2)
-        with kol_fase:
-            fase_terpilih = st.selectbox("Fase:", list(peta_fase_kelas.keys()))
-        with kol_kelas:
-            kelas_terpilih = st.selectbox("Kelas:", peta_fase_kelas[fase_terpilih])
+        with kol_fase: fase_terpilih = st.selectbox("Fase:", list(peta_fase_kelas.keys()))
+        with kol_kelas: kelas_terpilih = st.selectbox("Kelas:", peta_fase_kelas[fase_terpilih])
             
-        # Menggabungkan hasil untuk Word Template
         simpan_teks('Fase_Kelas', f"{fase_terpilih} / {kelas_terpilih}")
         
         pilihan_elemen = ["Pribadi Peserta Didik", "Yesus Kristus", "Gereja", "Masyarakat"]
@@ -136,26 +122,12 @@ with tab1:
             st.success(f"Teks buku berhasil diserap! ({len(pembaca.pages)} halaman).")
             
         if st.button("✨ Rumuskan CP, Kompetensi Awal & TP Otomatis (AI)", key="btn_cptp"):
-            if not api_key_guru:
-                st.warning("Pastikan Kunci API terisi di Sidebar!")
+            if not api_key_guru: st.warning("Pastikan Kunci API terisi di Sidebar!")
             else:
                 with st.spinner("AI sedang menganalisis materi untuk merumuskan CP dan TP..."):
                     try:
                         prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                        Rumuskan 3 hal berikut:
-                        1. Capaian Pembelajaran (CP) yang sesuai dengan cakupan materi (1 paragraf ringkas).
-                        2. Kompetensi Awal (kemampuan dasar prasyarat) yang harus dimiliki peserta didik sebelum mempelajari materi ini.
-                        3. Tujuan Pembelajaran (TP) yang ingin dicapai (1-3 poin singkat).
-                        
-                        Wajib gunakan tag ini agar sistem dapat memisahkan teksnya:
-                        [CP]
-                        (Isi teks Capaian Pembelajaran di sini)
-                        [KOMP_AWAL]
-                        (Isi teks Kompetensi Awal di sini)
-                        [TP]
-                        (Isi teks Tujuan Pembelajaran di sini)
-                        
-                        ATURAN KETAT: Jawab LANGSUNG pada intinya tanpa salam atau pengantar.
+                        Rumuskan:\n[CP]\n(1 paragraf Capaian Pembelajaran)\n[KOMP_AWAL]\n(Kompetensi Awal)\n[TP]\n(1-3 poin Tujuan Pembelajaran)
                         """
                         respons_ai = panggil_ai(prompt)
                         if "[CP]" in respons_ai and "[KOMP_AWAL]" in respons_ai and "[TP]" in respons_ai:
@@ -166,32 +138,21 @@ with tab1:
 
     cp_input = st.text_area("Capaian Pembelajaran (CP):", value=st.session_state.draft_cp, height=100)
     simpan_teks('Capaian_Pembelajaran', cp_input)
-    
     komp_awal_input = st.text_area("Kompetensi Awal:", value=st.session_state.draft_komp_awal, height=100)
     simpan_teks('Kompetensi_Awal', komp_awal_input)
 
 # ================= TAB 2 =================
 with tab2:
     st.subheader("Tujuan & Pemantik")
-    
     tp = st.text_area("Tujuan Pembelajaran (TP):", value=st.session_state.draft_tp, height=100)
     simpan_teks('Tujuan_Pembelajaran', tp)
     
     if st.button("✨ Rumuskan Pemahaman & Pemantik (AI)", key="btn_pemantik"):
-        if not api_key_guru or not st.session_state.teks_buku or not tp:
-            st.warning("Pastikan Kunci API, PDF Buku, dan TP sudah terisi!")
+        if not api_key_guru or not st.session_state.teks_buku or not tp: st.warning("Pastikan Kunci API, PDF, dan TP terisi!")
         else:
             with st.spinner("AI merumuskan komponen inti..."):
                 try:
-                    prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    Buatkan 'Pemahaman Bermakna' (1 paragraf) dan 3 'Pertanyaan Pemantik' untuk TP: {tp}.
-                    Wajib gunakan tag ini:
-                    [PEMAHAMAN]
-                    (Isi pemahaman bermakna di sini)
-                    [PEMANTIK]
-                    (Isi pertanyaan pemantik di sini)
-                    ATURAN KETAT: Jawab LANGSUNG pada intinya tanpa mengulang identitas atau salam.
-                    """
+                    prompt = f"Berdasarkan buku ini:\n{st.session_state.teks_buku[:15000]}\nBuatkan untuk TP: {tp}.\n[PEMAHAMAN]\n(1 paragraf pemahaman bermakna)\n[PEMANTIK]\n(3 pertanyaan pemantik)"
                     respons_ai = panggil_ai(prompt)
                     if "[PEMAHAMAN]" in respons_ai and "[PEMANTIK]" in respons_ai:
                         st.session_state.draft_pemahaman = respons_ai.split("[PEMAHAMAN]")[1].split("[PEMANTIK]")[0].strip()
@@ -206,35 +167,18 @@ with tab2:
 with tab3:
     st.subheader("Kegiatan Pembelajaran")
     
-    opsi_model = [
-        "Discovery Learning", "Problem Based Learning (PBL)", "Project Based Learning (PjBL)",
-        "Inquiry Learning", "Cooperative Learning", "Pendekatan Saintifik (5M)"
-    ]
+    opsi_model = ["Discovery Learning", "Problem Based Learning (PBL)", "Project Based Learning (PjBL)", "Inquiry Learning", "Cooperative Learning", "Pendekatan Saintifik (5M)"]
     model_belajar = st.selectbox("Pilih Pendekatan/Model Pembelajaran:", opsi_model)
     simpan_teks('Model_Pembelajaran', model_belajar)
     
     jml_pertemuan = st.number_input("Jumlah Pertemuan:", min_value=1, max_value=5, value=1)
     
     if st.button("✨ Rancang Kegiatan Pembelajaran (AI)", key="btn_kegiatan"):
-        if not api_key_guru or not st.session_state.teks_buku or not tp:
-            st.warning("Pastikan Kunci API, PDF, dan TP terisi!")
+        if not api_key_guru or not st.session_state.teks_buku or not tp: st.warning("Pastikan Kunci API, PDF, dan TP terisi!")
         else:
             with st.spinner(f"AI menyusun sintaks {model_belajar} untuk {jml_pertemuan} pertemuan..."):
                 try:
-                    prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    Rancang 'Kegiatan Pembelajaran' untuk {jml_pertemuan} pertemuan guna mencapai TP: {tp}.
-                    Model pembelajaran yang digunakan adalah: {model_belajar}. 
-                    
-                    Wajib gunakan tag pemisah ini agar sistem bisa memotong teksnya:
-                    [AWAL]
-                    (Tuliskan langkah Pendahuluan di sini)
-                    [INTI]
-                    (Tuliskan langkah Inti di sini secara rinci dan WAJIB SESUAIKAN dengan sintaks/langkah-langkah baku dari {model_belajar})
-                    [PENUTUP]
-                    (Tuliskan langkah Penutup di sini)
-                    
-                    ATURAN KETAT: Jawab LANGSUNG ke isi kegiatan. Pisahkan per pertemuan dengan rapi.
-                    """
+                    prompt = f"Dari buku ini:\n{st.session_state.teks_buku[:15000]}\nRancang kegiatan {jml_pertemuan} pertemuan. Model: {model_belajar}. TP: {tp}.\n[AWAL]\n(Pendahuluan)\n[INTI]\n(Sintaks inti rinci)\n[PENUTUP]\n(Penutup)"
                     respons_ai = panggil_ai(prompt)
                     if "[AWAL]" in respons_ai and "[INTI]" in respons_ai and "[PENUTUP]" in respons_ai:
                         st.session_state.draft_awal = respons_ai.split("[AWAL]")[1].split("[INTI]")[0].strip()
@@ -247,26 +191,40 @@ with tab3:
     simpan_teks('Kegiatan_Penutup', st.text_area("C. Kegiatan Penutup:", value=st.session_state.draft_penutup, height=150))
     gbr_kegiatan = st.file_uploader("Gambar Kegiatan (Opsional)", type=['png', 'jpg', 'jpeg'], key="g2")
 
-# ================= TAB 4 =================
+# ================= TAB 4 (DIPERBARUI) =================
 with tab4:
-    st.subheader("Asesmen Pembelajaran")
+    st.subheader("Asesmen Pembelajaran & Penugasan")
+    
+    # FITUR BARU: INSTRUKSI KUSTOM UNTUK GURU
+    st.info("💡 Ketik instruksi di bawah ini agar asesmen yang dibuat AI sesuai dengan gaya mengajar Anda.")
+    instruksi_asesmen = st.text_area("Instruksi Khusus Asesmen (Opsional):", 
+                                     placeholder="Contoh: Fokuskan penilaian formatif pada rubrik presentasi kelompok, dan soal sumatif berjenis studi kasus hots.")
     
     if st.button("✨ Buatkan Paket Asesmen (AI)", key="btn_asesmen"):
         if not api_key_guru or not st.session_state.teks_buku:
             st.warning("Pastikan Kunci API dan PDF terisi!")
         else:
-            with st.spinner("AI menyusun instrumen penilaian..."):
+            with st.spinner("AI menyusun instrumen penilaian agar relevan dengan kegiatan..."):
                 try:
+                    # FITUR BARU: Mengirimkan konteks 'Kegiatan Inti' dari Tab 3 ke Tab 4
+                    konteks_kegiatan = f"Kegiatan belajar yang telah disepakati: {st.session_state.draft_inti}\n\n" if st.session_state.draft_inti else ""
+                    
                     prompt = f"""Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
+                    {konteks_kegiatan}
                     Buatkan 3 ragam instrumen penilaian terpisah.
+                    
+                    INSTRUKSI KHUSUS DARI GURU (WAJIB DIIKUTI JIKA ADA): 
+                    {instruksi_asesmen if instruksi_asesmen else 'Buatkan formatif berupa rubrik observasi dan sumatif berupa 5 soal pilihan ganda standar.'}
+                    
                     Wajib gunakan tag ini:
                     [DIAGNOSTIK]
-                    (3 pertanyaan dasar awal)
+                    (3 pertanyaan dasar prasyarat/awal)
                     [FORMATIF]
-                    (Penilaian proses atau rubrik sikap)
+                    (Penilaian proses, rubrik sikap, atau sesuai instruksi guru)
                     [SUMATIF]
-                    (5 soal pilihan ganda evaluasi akhir + kunci jawaban)
-                    ATURAN KETAT: Jawab LANGSUNG ke isi penilaian.
+                    (Soal evaluasi akhir + kunci jawaban, atau sesuai instruksi guru)
+                    
+                    ATURAN KETAT: Jawab LANGSUNG ke isi penilaian. Pastikan asesmen relevan dengan kegiatan belajar di atas.
                     """
                     respons_ai = panggil_ai(prompt)
                     if "[DIAGNOSTIK]" in respons_ai and "[FORMATIF]" in respons_ai and "[SUMATIF]" in respons_ai:
@@ -298,7 +256,7 @@ with tab5:
         simpan_teks('Nama_Kepala_Sekolah', st.text_input("Nama Kepala Sekolah:"))
     
     st.divider()
-    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan (termasuk {{Elemen}}).")
+    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan.")
     if st.button("🖨️ Rakit & Unduh Modul", type="primary", use_container_width=True):
         with st.spinner('Merakit dokumen...'):
             try:
