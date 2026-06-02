@@ -10,12 +10,10 @@ st.set_page_config(page_title="Modul AI Agama Katolik", page_icon="🕊️", lay
 st.title("🕊️ Penyusun Modul Ajar Agama Katolik")
 st.write("Sistem perancang modul otomatis berbasis dokumen Buku Ajar.")
 
-
 st.sidebar.subheader("🤖 Pengaturan Asisten AI")
 api_key_guru = st.sidebar.text_input("🔑 Kunci API Gemini:", type="password")
 st.sidebar.divider()
 st.sidebar.write("Unggah PDF Buku Ajar di Tab 1 agar AI bisa membaca materinya.")
-
 
 st.markdown("""
     <style>
@@ -40,7 +38,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
 
 if 'data_isian' not in st.session_state:
     st.session_state.data_isian = {}
@@ -69,11 +66,9 @@ def panggil_ai(prompt):
     model = genai.GenerativeModel(nama_mesin)
     return model.generate_content(prompt).text
 
-
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 1. Info Umum", "🎯 2. Pemantik", "🏃 3. Kegiatan", "📝 4. Asesmen", "🖨️ 5. Cetak"
 ])
-
 
 with tab1:
     st.subheader("Informasi Umum Modul")
@@ -102,7 +97,6 @@ with tab1:
             st.session_state.teks_buku = teks_sementara
             st.success(f"Teks buku berhasil diserap! ({len(pembaca.pages)} halaman). AI siap digunakan di tab berikutnya.")
 
-
 with tab2:
     st.subheader("Tujuan & Pemantik")
     tp = st.text_area("Tujuan Pembelajaran (TP):")
@@ -114,14 +108,13 @@ with tab2:
         else:
             with st.spinner("AI menganalisis buku..."):
                 try:
-                    prompt = f"Berdasarkan teks buku ini:\n{st.session_state.teks_buku[:15000]}\n\nBuatkan 'Pemahaman Bermakna' (1 paragraf) dan 3 'Pertanyaan Pemantik' yang relevan dengan Tujuan Pembelajaran: {tp}. Pisahkan judulnya dengan jelas."
+                    prompt = f"Berdasarkan teks buku ini:\n{st.session_state.teks_buku[:15000]}\n\nBuatkan 'Pemahaman Bermakna' (1 paragraf) dan 3 'Pertanyaan Pemantik' yang relevan dengan Tujuan Pembelajaran: {tp}.\n\nATURAN KETAT: Jawab LANGSUNG pada intinya. JANGAN menuliskan identitas modul, salam, atau mengulang TP. Cukup berikan teks untuk Pemahaman Bermakna dan Pertanyaan Pemantik saja."
                     st.session_state.draft_pemantik = panggil_ai(prompt)
                 except Exception as e: st.error(e)
                 
     simpan_teks('Pemahaman_Bermakna', st.text_area("Pemahaman Bermakna:", value=st.session_state.draft_pemantik, height=100))
     simpan_teks('Pertanyaan_Pemantik', st.text_area("Pertanyaan Pemantik:", height=100))
     gbr_pemantik = st.file_uploader("Gambar Pemantik (Opsional)", type=['png', 'jpg', 'jpeg'], key="g1")
-
 
 with tab3:
     st.subheader("Kegiatan Pembelajaran (Pendekatan Discovery Learning / 6C)")
@@ -132,13 +125,12 @@ with tab3:
         else:
             with st.spinner("AI menyusun langkah pembelajaran..."):
                 try:
-                    prompt = f"Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\nRancang 'Kegiatan Pembelajaran' (Pendahuluan, Inti, Penutup) menggunakan pendekatan Discovery Learning atau 6C untuk mencapai TP: {tp}. Tulis dengan praktis dan menarik."
+                    prompt = f"Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\nRancang 'Kegiatan Pembelajaran' (Pendahuluan, Inti, Penutup) untuk mencapai TP: {tp}.\n\nATURAN KETAT: Jawab LANGSUNG berupa langkah-langkah kegiatannya saja. JANGAN menuliskan judul modul, identitas, atau TP lagi. LANGSUNG mulai dari kata 'A. Kegiatan Pendahuluan', 'B. Kegiatan Inti', dan 'C. Kegiatan Penutup'."
                     st.session_state.draft_kegiatan = panggil_ai(prompt)
                 except Exception as e: st.error(e)
                 
     simpan_teks('Kegiatan_Pembelajaran', st.text_area("Skenario Kegiatan Pembelajaran:", value=st.session_state.draft_kegiatan, height=300))
     gbr_kegiatan = st.file_uploader("Gambar Kegiatan (Opsional)", type=['png', 'jpg', 'jpeg'], key="g2")
-
 
 with tab4:
     st.subheader("Asesmen Pembelajaran")
@@ -149,7 +141,7 @@ with tab4:
         else:
             with st.spinner("AI membuat rubrik dan soal..."):
                 try:
-                    prompt = f"Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\nBuatkan 3 pertanyaan untuk 'Asesmen Diagnostik' (Awal), panduan observasi untuk 'Asesmen Formatif' (Proses), dan 5 soal pilihan ganda beserta kunci jawaban untuk 'Asesmen Sumatif' (Akhir)."
+                    prompt = f"Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\nBuatkan 3 pertanyaan untuk 'Asesmen Diagnostik' (Awal), panduan observasi 'Asesmen Formatif', dan 5 soal pilihan ganda beserta kunci jawaban untuk 'Asesmen Sumatif'.\n\nATURAN KETAT: Jawab LANGSUNG ke isi asesmen. JANGAN menulis ulang identitas atau memberi kalimat pengantar. Pisahkan dengan jelas bagian Diagnostik, Formatif, dan Sumatif."
                     st.session_state.draft_asesmen = panggil_ai(prompt)
                 except Exception as e: st.error(e)
                 
@@ -166,7 +158,6 @@ with tab4:
     simpan_teks('Lampiran_Pendukung', st.text_area("Lampiran Pendukung / Lembar Kerja:"))
     gbr_pendukung = st.file_uploader("Gambar Lampiran (Opsional)", type=['png', 'jpg', 'jpeg'], key="g6")
 
-
 with tab5:
     st.subheader("🖨️ Rakit Dokumen Word")
     st.info("Pastikan Anda sudah menyiapkan file 'Template_Modul_Agama.docx'.")
@@ -175,7 +166,6 @@ with tab5:
         with st.spinner('Merakit dokumen...'):
             try:
                 doc = DocxTemplate("Template_Modul_Agama.docx")
-                
                 
                 if gbr_pemantik: st.session_state.data_isian['Gambar_Pemantik'] = InlineImage(doc, gbr_pemantik, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Pemantik'] = ""
@@ -194,7 +184,6 @@ with tab5:
                 
                 if gbr_pendukung: st.session_state.data_isian['Gambar_Pendukung'] = InlineImage(doc, gbr_pendukung, width=Mm(100))
                 else: st.session_state.data_isian['Gambar_Pendukung'] = ""
-                
                 
                 doc.render(st.session_state.data_isian)
                 bio = io.BytesIO()
