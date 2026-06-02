@@ -7,13 +7,10 @@ st.set_page_config(page_title="Generator Modul AI", page_icon="📖")
 st.title("📖 AI Peracik Buku Ajar (Pendidikan Agama Katolik)")
 st.write("Unggah PDF Buku Ajar (atau satu bab spesifik), dan AI akan meracik modul berdasarkan isi buku tersebut.")
 
-
 api_key_guru = st.text_input("🔑 Masukkan Kunci API Gemini:", type="password")
 st.divider()
 
-
 file_buku = st.file_uploader("📂 Unggah File PDF Buku Ajar (Maks 200MB):", type=['pdf'])
-
 
 instruksi_guru = st.text_area(
     "🎯 Apa yang Anda inginkan dari buku ini?", 
@@ -33,7 +30,6 @@ if st.button("✨ Analisis Buku & Buat Modul", type="primary"):
                 
                 pembaca_pdf = PyPDF2.PdfReader(file_buku)
                 teks_buku = ""
-                
                 for halaman in pembaca_pdf.pages:
                     teks = halaman.extract_text()
                     if teks:
@@ -43,7 +39,19 @@ if st.button("✨ Analisis Buku & Buat Modul", type="primary"):
                 
                 
                 genai.configure(api_key=api_key_guru)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                
+                nama_mesin = None
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        nama_mesin = m.name
+                        if 'flash' in m.name.lower():
+                            break
+                
+                if not nama_mesin:
+                    raise Exception("Tidak ada model AI yang diizinkan untuk Kunci API ini.")
+                    
+                model = genai.GenerativeModel(nama_mesin)
                 
                 
                 prompt = f"""
