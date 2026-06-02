@@ -71,10 +71,11 @@ def panggil_ai(prompt):
         raise Exception("Tidak ada model AI yang tersedia.")
     
     aturan_global = """
-    \n\nATURAN FORMATTING WAJIB (PENTING UNTUK FORMAT WORD):
-    1. JANGAN PERNAH menggunakan simbol tebal/bold bergaya markdown seperti bintang dua (**). Jika ingin menegaskan kata, ketik dengan huruf kapital biasa.
-    2. JANGAN PERNAH menggunakan tabel horizontal bergaya markdown (|---|---|). Jika membuat rubrik nilai, jabarkan secara vertikal menggunakan poin-poin teks biasa (Contoh: Kriteria A: Sangat Baik jika..., Cukup jika...).
-    3. Gunakan penomoran lurus yang konsisten dan rapi (1., 2., 3. atau a., b., c.) tanpa karakter khusus agar teks rata kiri-kanan secara sempurna di Microsoft Word.
+    \n\nATURAN FORMATTING WAJIB (PENTING):
+    1. WAJIB menggunakan huruf kecil normal dengan kapital di awal kalimat (Sentence Case). DILARANG KERAS menghasilkan teks berhuruf besar semua (UPPERCASE) untuk seluruh kalimat/paragraf.
+    2. JANGAN PERNAH menggunakan simbol tebal bergaya markdown seperti (**). Jika ada kata penting, gunakan tanda petik dua ("...") sebagai penegas.
+    3. JANGAN PERNAH membuat tabel horizontal bergaya markdown (|---|). Jabarkan rubrik penilaian secara vertikal dengan poin teks biasa.
+    4. Gunakan penomoran lurus (1., 2., 3.) tanpa karakter khusus agar teks rata kiri-kanan secara sempurna di Microsoft Word.
     """
     
     model = genai.GenerativeModel(nama_mesin)
@@ -128,10 +129,12 @@ with tab2:
                     Wajib patuhi struktur penulisan di bawah ini agar sistem bisa memilahnya. Tulis tag persis seperti ini:
                     
                     [PEMAHAMAN]
-                    (Ketik isi teks pemahaman bermakna di sini secara langsung)
+                    (Ketik isi teks pemahaman bermakna di sini secara langsung menggunakan huruf kecil normal)
                     
                     [PEMANTIK]
-                    (Ketik 3 pertanyaan pemantik di sini menggunakan penomoran 1., 2., 3.)
+                    (Ketik 3 pertanyaan pemantik di sini menggunakan penomoran 1., 2., 3. dengan huruf kecil normal)
+                    
+                    ATURAN KETAT: Jawab LANGSUNG pada intinya menggunakan huruf kecil normal (Sentence Case). JANGAN menuliskan identitas modul, materi pokok, salam, atau mengulang teks TP.
                     """
                     respons_ai = panggil_ai(prompt)
                     
@@ -160,7 +163,14 @@ with tab3:
         else:
             with st.spinner("AI menyusun langkah pembelajaran..."):
                 try:
-                    prompt = f"Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\nRancang 'Kegiatan Pembelajaran' lengkap meliputi Langkah Pendahuluan, Langkah Inti (dengan alur Discovery Learning), dan Langkah Penutup untuk mencapai TP: {tp}. Tuliskan rincian langkah secara berurutan dengan penomoran lurus yang rapi."
+                    prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
+                    Rancang 'Kegiatan Pembelajaran' lengkap meliputi Langkah Pendahuluan, Langkah Inti (dengan alur Discovery Learning), dan Langkah Penutup untuk mencapai TP: {tp}.
+                    
+                    ATURAN KETAT:
+                    1. Tulis menggunakan huruf kecil normal (Sentence Case), BUKAN huruf besar semua (UPPERCASE).
+                    2. LANGSUNG mulai dari kalimat 'Langkah Pendahuluan', 'Langkah Inti', dan 'Langkah Penutup'.
+                    3. DILARANG KERAS memasukkan bagian 'MATERI POKOK', 'INFORMASI UMUM', 'IDENTITAS', atau komponen 'PENILAIAN/ASESMEN' di dalam teks ini karena hal tersebut berulang dan sudah ada tempatnya sendiri.
+                    """
                     st.session_state.draft_kegiatan = panggil_ai(prompt)
                 except Exception as e: 
                     st.error(e)
@@ -179,18 +189,20 @@ with tab4:
             with st.spinner("AI menyusun instrumen penilaian..."):
                 try:
                     prompt = f"""Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    Buatkan 3 ragam instrumen penilaian yang terpisah untuk materi ini.
+                    Buatkan 3 ragam instrumen penilaian yang terpisah untuk materi ini menggunakan huruf kecil normal (Sentence Case).
                     
                     Wajib patuhi struktur penulisan di bawah ini agar sistem bisa membagi teks ke tiap kolom secara mandiri. Tulis tag persis seperti ini:
                     
                     [DIAGNOSTIK]
-                    (Tuliskan 3 pertanyaan pemantik dasar awal pembelajaran di sini)
+                    (Tuliskan 3 pertanyaan pemantik dasar awal pembelajaran di sini dengan huruf kecil normal)
                     
                     [FORMATIF]
-                    (Tuliskan bentuk penilaian proses, lembar observasi sikap, atau rubrik penilaian karakter secara deskriptif vertikal di sini)
+                    (Tuliskan bentuk penilaian proses atau rubrik penilaian karakter secara deskriptif vertikal di sini dengan huruf kecil normal)
                     
                     [SUMATIF]
-                    (Tuliskan 5 soal pilihan ganda evaluasi akhir materi beserta pilihan jawaban dan kunci jawabannya di sini)
+                    (Tuliskan 5 soal pilihan ganda evaluasi akhir materi beserta pilihan jawaban dan kunci jawabannya di sini dengan huruf kecil normal)
+                    
+                    ATURAN KETAT: Jawab LANGSUNG ke isi masing-masing jenis penilaian. JANGAN menulis ulang identitas, pengantar materi pokok, atau penutup.
                     """
                     respons_ai = panggil_ai(prompt)
                     
