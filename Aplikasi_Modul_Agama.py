@@ -47,16 +47,24 @@ def simpan_teks(kunci, nilai):
 
 def panggil_ai(prompt):
     genai.configure(api_key=api_key_guru)
-    nama_mesin = None
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            nama_mesin = m.name
-            # KUNCI PERUBAHAN: Memaksa sistem mencari versi 1.5 yang kuotanya melimpah
-            if '1.5' in m.name.lower() and 'flash' in m.name.lower(): 
-                break
-                
-    if not nama_mesin: raise Exception("Tidak ada model AI yang tersedia.")
     
+    # Daftar prioritas model stabil dengan kuota gratis melimpah
+    prioritas_model = [
+        'models/gemini-1.5-flash-002', 
+        'models/gemini-1.5-flash-001', 
+        'models/gemini-1.5-flash-latest'
+    ]
+    
+    # Ambil semua nama model yang valid dan diizinkan di akun Anda
+    model_valid = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    
+    # Cari model terbaik dari daftar prioritas
+    nama_mesin = 'gemini-1.5-flash' # Fallback dasar jika terjadi sesuatu
+    for pilihan in prioritas_model:
+        if pilihan in model_valid:
+            nama_mesin = pilihan
+            break # Jika sudah menemukan yang stabil, langsung pilih dan berhenti mencari
+            
     aturan_global = """
     \n\nATURAN FORMATTING WAJIB (PENTING):
     1. WAJIB menggunakan huruf kecil normal dengan kapital di awal kalimat (Sentence Case). DILARANG KERAS teks berhuruf besar semua (UPPERCASE).
@@ -64,6 +72,7 @@ def panggil_ai(prompt):
     3. JANGAN PERNAH membuat tabel horizontal bergaya markdown (|---|). Jabarkan vertikal dengan poin biasa.
     4. Gunakan penomoran lurus (1., 2., 3.) tanpa karakter khusus agar rata kiri-kanan rapi di Word.
     """
+    
     model = genai.GenerativeModel(nama_mesin)
     return model.generate_content(prompt + aturan_global).text
 
