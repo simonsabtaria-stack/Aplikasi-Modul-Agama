@@ -18,43 +18,23 @@ st.sidebar.write("Unggah PDF Buku Ajar di Tab 1 agar AI bisa membaca materinya."
 st.markdown("""
     <style>
     .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #f1f5f9;
-        border-radius: 8px 8px 0px 0px;
-        padding: 10px 20px;
-        box-shadow: inset 0 -2px 0 0 #cbd5e1;
-        transition: all 0.3s ease;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #1e293b;
-        color: #ffffff !important;
-        box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-    }
-    .stButton > button[kind="primary"] {
-        border-radius: 8px;
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        border: none;
-    }
+    .stTabs [data-baseweb="tab"] { background-color: #f1f5f9; border-radius: 8px 8px 0px 0px; padding: 10px 20px; box-shadow: inset 0 -2px 0 0 #cbd5e1; transition: all 0.3s ease; }
+    .stTabs [aria-selected="true"] { background-color: #1e293b; color: #ffffff !important; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); }
+    .stButton > button[kind="primary"] { border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; }
     </style>
 """, unsafe_allow_html=True)
 
-if 'data_isian' not in st.session_state:
-    st.session_state.data_isian = {}
-if 'teks_buku' not in st.session_state:
-    st.session_state.teks_buku = ""
-if 'draft_pemahaman' not in st.session_state:
-    st.session_state.draft_pemahaman = ""
-if 'draft_pemantik' not in st.session_state:
-    st.session_state.draft_pemantik = ""
-if 'draft_kegiatan' not in st.session_state:
-    st.session_state.draft_kegiatan = ""
-if 'draft_diagnostik' not in st.session_state:
-    st.session_state.draft_diagnostik = ""
-if 'draft_formatif' not in st.session_state:
-    st.session_state.draft_formatif = ""
-if 'draft_sumatif' not in st.session_state:
-    st.session_state.draft_sumatif = ""
+
+if 'data_isian' not in st.session_state: st.session_state.data_isian = {}
+if 'teks_buku' not in st.session_state: st.session_state.teks_buku = ""
+if 'draft_pemahaman' not in st.session_state: st.session_state.draft_pemahaman = ""
+if 'draft_pemantik' not in st.session_state: st.session_state.draft_pemantik = ""
+if 'draft_awal' not in st.session_state: st.session_state.draft_awal = ""
+if 'draft_inti' not in st.session_state: st.session_state.draft_inti = ""
+if 'draft_penutup' not in st.session_state: st.session_state.draft_penutup = ""
+if 'draft_diagnostik' not in st.session_state: st.session_state.draft_diagnostik = ""
+if 'draft_formatif' not in st.session_state: st.session_state.draft_formatif = ""
+if 'draft_sumatif' not in st.session_state: st.session_state.draft_sumatif = ""
 
 def simpan_teks(kunci, nilai):
     st.session_state.data_isian[kunci] = nilai
@@ -65,19 +45,16 @@ def panggil_ai(prompt):
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
             nama_mesin = m.name
-            if 'flash' in m.name.lower():
-                break
-    if not nama_mesin:
-        raise Exception("Tidak ada model AI yang tersedia.")
+            if 'flash' in m.name.lower(): break
+    if not nama_mesin: raise Exception("Tidak ada model AI yang tersedia.")
     
     aturan_global = """
     \n\nATURAN FORMATTING WAJIB (PENTING):
-    1. WAJIB menggunakan huruf kecil normal dengan kapital di awal kalimat (Sentence Case). DILARANG KERAS menghasilkan teks berhuruf besar semua (UPPERCASE) untuk seluruh kalimat/paragraf.
-    2. JANGAN PERNAH menggunakan simbol tebal bergaya markdown seperti (**). Jika ada kata penting, gunakan tanda petik dua ("...") sebagai penegas.
-    3. JANGAN PERNAH membuat tabel horizontal bergaya markdown (|---|). Jabarkan rubrik penilaian secara vertikal dengan poin teks biasa.
-    4. Gunakan penomoran lurus (1., 2., 3.) tanpa karakter khusus agar teks rata kiri-kanan secara sempurna di Microsoft Word.
+    1. WAJIB menggunakan huruf kecil normal dengan kapital di awal kalimat (Sentence Case). DILARANG KERAS teks berhuruf besar semua (UPPERCASE).
+    2. JANGAN PERNAH menggunakan simbol tebal bergaya markdown seperti (**). Gunakan tanda petik dua ("...") sebagai penegas.
+    3. JANGAN PERNAH membuat tabel horizontal bergaya markdown (|---|). Jabarkan vertikal dengan poin biasa.
+    4. Gunakan penomoran lurus (1., 2., 3.) tanpa karakter khusus agar rata kiri-kanan rapi di Word.
     """
-    
     model = genai.GenerativeModel(nama_mesin)
     return model.generate_content(prompt + aturan_global).text
 
@@ -93,11 +70,17 @@ with tab1:
         simpan_teks('Nama_Penyusun', st.text_input("Nama Penyusun:"))
         simpan_teks('Satuan_Pendidikan', st.text_input("Satuan Pendidikan (Nama Sekolah):"))
     with c2:
-        simpan_teks('Fase_Kelas', st.text_input("Fase / Kelas:"))
+        pilihan_fase = ["Fase A (Kelas I - II)", "Fase B (Kelas III - IV)", "Fase C (Kelas V - VI)", "Fase D (Kelas VII - IX)", "Fase E (Kelas X)", "Fase F (Kelas XI - XII)"]
+        fase_kelas = st.selectbox("Fase / Kelas:", pilihan_fase)
+        simpan_teks('Fase_Kelas', fase_kelas)
         simpan_teks('Alokasi_Waktu', st.text_input("Alokasi Waktu (Contoh: 2 x 35 Menit):"))
         simpan_teks('Kompetensi_Awal', st.text_area("Kompetensi Awal:"))
     
-    simpan_teks('Profil_Pelajar_Pancasila', st.text_area("Profil Pelajar Pancasila:"))
+    simpan_teks('Capaian_Pembelajaran', st.text_area("Capaian Pembelajaran (CP):"))
+
+    opsi_ppp = ["Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia", "Berkebinekaan Global", "Bergotong Royong", "Mandiri", "Bernalar Kritis", "Kreatif"]
+    pilihan_ppp = st.multiselect("Profil Pelajar Pancasila:", opsi_ppp)
+    simpan_teks('Profil_Pelajar_Pancasila', ", ".join(pilihan_ppp))
     
     st.divider()
     st.subheader("📚 Sumber Materi (Wajib untuk AI)")
@@ -110,7 +93,7 @@ with tab1:
                 t = hal.extract_text()
                 if t: teks_sementara += t + "\n"
             st.session_state.teks_buku = teks_sementara
-            st.success(f"Teks buku berhasil diserap! ({len(pembaca.pages)} halaman). AI siap digunakan di tab berikutnya.")
+            st.success(f"Teks buku berhasil diserap! ({len(pembaca.pages)} halaman).")
 
 with tab2:
     st.subheader("Tujuan & Pemantik")
@@ -119,64 +102,77 @@ with tab2:
     
     if st.button("✨ Rumuskan Pemahaman & Pemantik (AI)", key="btn_pemantik"):
         if not api_key_guru or not st.session_state.teks_buku or not tp:
-            st.warning("Pastikan Kunci API, PDF Buku di Tab 1, dan TP sudah terisi!")
+            st.warning("Pastikan Kunci API, PDF Buku, dan TP sudah terisi!")
         else:
             with st.spinner("AI merumuskan komponen inti..."):
                 try:
                     prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    Buatkan satu paragraf 'Pemahaman Bermakna' dan 3 butir 'Pertanyaan Pemantik' yang paling esensial untuk TP: {tp}.
-                    
-                    Wajib patuhi struktur penulisan di bawah ini agar sistem bisa memilahnya. Tulis tag persis seperti ini:
-                    
+                    Buatkan 'Pemahaman Bermakna' (1 paragraf) dan 3 'Pertanyaan Pemantik' untuk TP: {tp}.
+                    Wajib gunakan tag ini:
                     [PEMAHAMAN]
-                    (Ketik isi teks pemahaman bermakna di sini secara langsung menggunakan huruf kecil normal)
-                    
+                    (Isi pemahaman bermakna di sini)
                     [PEMANTIK]
-                    (Ketik 3 pertanyaan pemantik di sini menggunakan penomoran 1., 2., 3. dengan huruf kecil normal)
-                    
-                    ATURAN KETAT: Jawab LANGSUNG pada intinya menggunakan huruf kecil normal (Sentence Case). JANGAN menuliskan identitas modul, materi pokok, salam, atau mengulang teks TP.
+                    (Isi pertanyaan pemantik di sini)
+                    ATURAN KETAT: Jawab LANGSUNG pada intinya tanpa mengulang identitas atau salam.
                     """
                     respons_ai = panggil_ai(prompt)
-                    
                     if "[PEMAHAMAN]" in respons_ai and "[PEMANTIK]" in respons_ai:
                         st.session_state.draft_pemahaman = respons_ai.split("[PEMAHAMAN]")[1].split("[PEMANTIK]")[0].strip()
                         st.session_state.draft_pemantik = respons_ai.split("[PEMANTIK]")[1].strip()
-                    else:
-                        st.session_state.draft_pemahaman = respons_ai
-                except Exception as e: 
-                    st.error(e)
+                except Exception as e: st.error(e)
                 
-    pemahaman_input = st.text_area("Pemahaman Bermakna:", value=st.session_state.draft_pemahaman, height=100)
-    simpan_teks('Pemahaman_Bermakna', pemahaman_input)
-    
-    pemantik_input = st.text_area("Pertanyaan Pemantik:", value=st.session_state.draft_pemantik, height=100)
-    simpan_teks('Pertanyaan_Pemantik', pemantik_input)
-    
+    simpan_teks('Pemahaman_Bermakna', st.text_area("Pemahaman Bermakna:", value=st.session_state.draft_pemahaman, height=100))
+    simpan_teks('Pertanyaan_Pemantik', st.text_area("Pertanyaan Pemantik:", value=st.session_state.draft_pemantik, height=100))
     gbr_pemantik = st.file_uploader("Gambar Pemantik (Opsional)", type=['png', 'jpg', 'jpeg'], key="g1")
 
 with tab3:
     st.subheader("Kegiatan Pembelajaran")
     
+    
+    opsi_model = [
+        "Discovery Learning",
+        "Problem Based Learning (PBL)",
+        "Project Based Learning (PjBL)",
+        "Inquiry Learning",
+        "Cooperative Learning",
+        "Pendekatan Saintifik (5M)"
+    ]
+    model_belajar = st.selectbox("Pilih Pendekatan/Model Pembelajaran:", opsi_model)
+    simpan_teks('Model_Pembelajaran', model_belajar)
+    
+    jml_pertemuan = st.number_input("Jumlah Pertemuan:", min_value=1, max_value=5, value=1)
+    
     if st.button("✨ Rancang Kegiatan Pembelajaran (AI)", key="btn_kegiatan"):
         if not api_key_guru or not st.session_state.teks_buku or not tp:
             st.warning("Pastikan Kunci API, PDF, dan TP terisi!")
         else:
-            with st.spinner("AI menyusun langkah pembelajaran..."):
+            with st.spinner(f"AI menyusun sintaks {model_belajar} untuk {jml_pertemuan} pertemuan..."):
                 try:
                     prompt = f"""Berdasarkan materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    Rancang 'Kegiatan Pembelajaran' lengkap meliputi Langkah Pendahuluan, Langkah Inti (dengan alur Discovery Learning), dan Langkah Penutup untuk mencapai TP: {tp}.
+                    Rancang 'Kegiatan Pembelajaran' untuk {jml_pertemuan} pertemuan guna mencapai TP: {tp}.
+                    Model pembelajaran yang digunakan adalah: {model_belajar}. 
                     
-                    ATURAN KETAT:
-                    1. Tulis menggunakan huruf kecil normal (Sentence Case), BUKAN huruf besar semua (UPPERCASE).
-                    2. LANGSUNG mulai dari kalimat 'Langkah Pendahuluan', 'Langkah Inti', dan 'Langkah Penutup'.
-                    3. DILARANG KERAS memasukkan bagian 'MATERI POKOK', 'INFORMASI UMUM', 'IDENTITAS', atau komponen 'PENILAIAN/ASESMEN' di dalam teks ini karena hal tersebut berulang dan sudah ada tempatnya sendiri.
+                    Wajib gunakan tag pemisah ini agar sistem bisa memotong teksnya:
+                    [AWAL]
+                    (Tuliskan langkah Pendahuluan di sini)
+                    [INTI]
+                    (Tuliskan langkah Inti di sini secara rinci dan WAJIB SESUAIKAN dengan sintaks/langkah-langkah baku dari {model_belajar})
+                    [PENUTUP]
+                    (Tuliskan langkah Penutup di sini)
+                    
+                    ATURAN KETAT: Jawab LANGSUNG ke isi kegiatan. Pisahkan per pertemuan dengan rapi.
                     """
-                    st.session_state.draft_kegiatan = panggil_ai(prompt)
-                except Exception as e: 
-                    st.error(e)
+                    respons_ai = panggil_ai(prompt)
+                    
+                    if "[AWAL]" in respons_ai and "[INTI]" in respons_ai and "[PENUTUP]" in respons_ai:
+                        st.session_state.draft_awal = respons_ai.split("[AWAL]")[1].split("[INTI]")[0].strip()
+                        st.session_state.draft_inti = respons_ai.split("[INTI]")[1].split("[PENUTUP]")[0].strip()
+                        st.session_state.draft_penutup = respons_ai.split("[PENUTUP]")[1].strip()
+                except Exception as e: st.error(e)
                 
-    kegiatan_input = st.text_area("Skenario Kegiatan Pembelajaran:", value=st.session_state.draft_kegiatan, height=300)
-    simpan_teks('Kegiatan_Pembelajaran', kegiatan_input)
+    simpan_teks('Kegiatan_Awal', st.text_area("A. Kegiatan Pendahuluan:", value=st.session_state.draft_awal, height=150))
+    simpan_teks('Kegiatan_Inti', st.text_area("B. Kegiatan Inti:", value=st.session_state.draft_inti, height=250))
+    simpan_teks('Kegiatan_Penutup', st.text_area("C. Kegiatan Penutup:", value=st.session_state.draft_penutup, height=150))
     gbr_kegiatan = st.file_uploader("Gambar Kegiatan (Opsional)", type=['png', 'jpg', 'jpeg'], key="g2")
 
 with tab4:
@@ -189,54 +185,47 @@ with tab4:
             with st.spinner("AI menyusun instrumen penilaian..."):
                 try:
                     prompt = f"""Dari materi buku ini:\n{st.session_state.teks_buku[:15000]}\n\n
-                    Buatkan 3 ragam instrumen penilaian yang terpisah untuk materi ini menggunakan huruf kecil normal (Sentence Case).
-                    
-                    Wajib patuhi struktur penulisan di bawah ini agar sistem bisa membagi teks ke tiap kolom secara mandiri. Tulis tag persis seperti ini:
-                    
+                    Buatkan 3 ragam instrumen penilaian terpisah.
+                    Wajib gunakan tag ini:
                     [DIAGNOSTIK]
-                    (Tuliskan 3 pertanyaan pemantik dasar awal pembelajaran di sini dengan huruf kecil normal)
-                    
+                    (3 pertanyaan dasar awal)
                     [FORMATIF]
-                    (Tuliskan bentuk penilaian proses atau rubrik penilaian karakter secara deskriptif vertikal di sini dengan huruf kecil normal)
-                    
+                    (Penilaian proses atau rubrik sikap)
                     [SUMATIF]
-                    (Tuliskan 5 soal pilihan ganda evaluasi akhir materi beserta pilihan jawaban dan kunci jawabannya di sini dengan huruf kecil normal)
-                    
-                    ATURAN KETAT: Jawab LANGSUNG ke isi masing-masing jenis penilaian. JANGAN menulis ulang identitas, pengantar materi pokok, atau penutup.
+                    (5 soal pilihan ganda evaluasi akhir + kunci jawaban)
+                    ATURAN KETAT: Jawab LANGSUNG ke isi penilaian.
                     """
                     respons_ai = panggil_ai(prompt)
-                    
                     if "[DIAGNOSTIK]" in respons_ai and "[FORMATIF]" in respons_ai and "[SUMATIF]" in respons_ai:
                         st.session_state.draft_diagnostik = respons_ai.split("[DIAGNOSTIK]")[1].split("[FORMATIF]")[0].strip()
                         st.session_state.draft_formatif = respons_ai.split("[FORMATIF]")[1].split("[SUMATIF]")[0].strip()
                         st.session_state.draft_sumatif = respons_ai.split("[SUMATIF]")[1].strip()
-                    else:
-                        st.session_state.draft_diagnostik = respons_ai
-                except Exception as e: 
-                    st.error(e)
+                except Exception as e: st.error(e)
                 
-    diagnostik_input = st.text_area("Asesmen Diagnostik (Awal):", value=st.session_state.draft_diagnostik, height=150)
-    simpan_teks('Asesmen_Diagnostik', diagnostik_input)
+    simpan_teks('Asesmen_Diagnostik', st.text_area("Asesmen Diagnostik (Awal):", value=st.session_state.draft_diagnostik, height=150))
     gbr_diagnostik = st.file_uploader("Gambar Diagnostik (Opsional)", type=['png', 'jpg', 'jpeg'], key="g3")
-    
-    formatif_input = st.text_area("Asesmen Formatif (Proses):", value=st.session_state.draft_formatif, height=150)
-    simpan_teks('Asesmen_Formatif', formatif_input)
+    simpan_teks('Asesmen_Formatif', st.text_area("Asesmen Formatif (Proses):", value=st.session_state.draft_formatif, height=150))
     gbr_formatif = st.file_uploader("Gambar Formatif (Opsional)", type=['png', 'jpg', 'jpeg'], key="g4")
-    
-    sumatif_input = st.text_area("Asesmen Sumatif (Akhir):", value=st.session_state.draft_sumatif, height=150)
-    simpan_teks('Asesmen_Sumatif', sumatif_input)
+    simpan_teks('Asesmen_Sumatif', st.text_area("Asesmen Sumatif (Akhir):", value=st.session_state.draft_sumatif, height=150))
     gbr_sumatif = st.file_uploader("Gambar Sumatif (Opsional)", type=['png', 'jpg', 'jpeg'], key="g5")
-    
     st.divider()
-    lampiran_input = st.text_area("Lampiran Pendukung / Lembar Kerja:")
-    simpan_teks('Lampiran_Pendukung', lampiran_input)
+    simpan_teks('Lampiran_Pendukung', st.text_area("Lampiran Pendukung / Lembar Kerja:"))
     gbr_pendukung = st.file_uploader("Gambar Lampiran (Opsional)", type=['png', 'jpg', 'jpeg'], key="g6")
 
 with tab5:
-    st.subheader("🖨️ Rakit Dokumen Word")
-    st.info("Pastikan Anda sudah menyiapkan file 'Template_Modul_Agama.docx'.")
+    st.subheader("Lembar Pengesahan & Cetak")
     
-    if st.button("Rakit & Unduh Modul", type="primary", use_container_width=True):
+    c_sah1, c_sah2 = st.columns(2)
+    with c_sah1:
+        tempat_terbit = st.text_input("Tempat Penerbitan (Kota):", value="Palangka Raya")
+        tgl_terbit = st.text_input("Tanggal Penerbitan:", value="Juli 2026")
+        simpan_teks('Tempat_Tanggal', f"{tempat_terbit}, {tgl_terbit}")
+    with c_sah2:
+        simpan_teks('Nama_Kepala_Sekolah', st.text_input("Nama Kepala Sekolah:"))
+    
+    st.divider()
+    st.info("Pastikan file 'Template_Modul_Agama.docx' sudah Anda mutakhirkan.")
+    if st.button("🖨️ Rakit & Unduh Modul", type="primary", use_container_width=True):
         with st.spinner('Merakit dokumen...'):
             try:
                 doc = DocxTemplate("Template_Modul_Agama.docx")
@@ -267,7 +256,7 @@ with tab5:
                 st.download_button(
                     label="📥 Download Modul (.docx)",
                     data=bio.getvalue(),
-                    file_name=f"Modul_Agama_{st.session_state.data_isian.get('Fase_Kelas', 'Kelas')}.docx",
+                    file_name="Modul_Agama_Katolik.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     use_container_width=True
                 )
